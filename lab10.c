@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "func.h"
+#include "newfunc.h"
 
 int main()
 {
@@ -17,28 +17,34 @@ int main()
 
     while (choice != 0)
     {
-        printf("Виберіть що робити:\n");
-        printf("0 щоб закінчити\n");
-        printf("1 щоб показати список книг\n");
-        printf("2 щоб додати нову книгу\n");
-        printf("3 щоб видалити книги дешевші за середнє\n");
-        printf("Введіть що потрібно робити: ");
-        scanf("%d", &choice);
+        printf("\nВиберіть що робити:\n");
+        printf("0. Закінчити роботу\n");
+        printf("1. Показати список книг (відсортований за вартістю)\n");
+        printf("2. Додати нову книгу\n");
+        printf("3. Видалити книги, дешевші за середнє\n");
+        printf("4. Знайти книги авторів на букву 'А'\n");
+        printf("Введіть ваш вибір: ");
+        
+        if (scanf("%d", &choice) != 1) {
+            // Очищення буфера при некоректному вводі
+            while(getchar() != '\n'); 
+            continue;
+        }
 
         if (choice == 1)
         {
             if (books == NULL)
-                printf("\n Список порожній.\n");
+                printf("\nСписок порожній.\n");
             else
                 printBooks(books);
         }
         else if (choice == 2)
         {
-            printf("\nВпишіть дані нової книги\n");
+            printf("\nВпишіть дані нової книги (без пробілів у тексті)\n");
             printf("Автор: ");
-            scanf("%s", newAuthor);
+            scanf("%49s", newAuthor);
             printf("Назва: ");
-            scanf("%s", newTitle);
+            scanf("%49s", newTitle);
             printf("Рік: ");
             scanf("%d", &newYear);
             printf("Сторінки: ");
@@ -47,24 +53,32 @@ int main()
             scanf("%f", &newCost);
 
             insertNewBook(&books, newAuthor, newTitle, newYear, newPages, newCost);
+            printf("\nКнигу успішно додано!\n");
         }
         else if (choice == 3)
         {
             if (books == NULL)
             {
-                printf("\n Список порожній.\n");
+                printf("\nСписок порожній.\n");
             }
             else
             {
                 avgCost = calculateAvg(books);
-                printf("\nСередня ціна книги з списку: %.2f\n", avgCost);
+                printf("\nСередня ціна книги зі списку: %.2f\n", avgCost);
 
                 delCheaperThanAvg(&books, avgCost);
-                printf("\nКниги видалені\n");
+                printf("Книги, дешевші за %.2f, були видалені.\n", avgCost);
             }
         }
+        else if (choice == 4)
+        {
+            if (books == NULL)
+                printf("\nСписок порожній.\n");
+            else
+                printBooksByAuthorA(books);
+        }
     }
+    
     freeList(books);
-
     return 0;
 }
