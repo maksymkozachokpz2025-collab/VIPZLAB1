@@ -1,157 +1,114 @@
-#include "newfunc.h"
+#include "func.h"
 
-void printHeader()
-{
-    printf("---------------------------------------------------------------------------------------\n");
-    printf("| %-15s\t| %-15s\t| %-6s\t| %-8s | %-8s |\n", "Author", "Title", "Year", "Pages", "Cost");
-    printf("---------------------------------------------------------------------------------------\n");
-}
-
-void printBooks(Book *head)
-{
-    Book *current = head;
-    printHeader();
-    while (current != NULL)
-    {
-        printf("| %-15s\t| %-15s\t| %-6d\t| %-8d | %-8.2f |\n",
-               current->author, current->title, current->year, current->pages, current->cost);
-        current = current->next;
-    }
-    printf("---------------------------------------------------------------------------------------\n");
-}
-
-// Нова функція для пошуку авторів на букву А
-void printBooksByAuthorA(Book *head)
-{
-    Book *current = head;
-    int found = 0;
+void insertSorted(Book **head, Book data) {
+    Book *newBtn = (Book *)malloc(sizeof(Book));
+    if (!newBtn) return;
     
-    printf("\nКниги авторів, чиє прізвище починається на 'А':\n");
-    printHeader();
-    
-    while (current != NULL)
-    {
-        // Перевірка на латинську 'A'/'a' та кириличну 'А' (UTF-8 зазвичай займає 2 байти)
-        if (current->author[0] == 'A' || current->author[0] == 'a' || 
-            strncmp(current->author, "А", 2) == 0 || strncmp(current->author, "а", 2) == 0)
-        {
-            printf("| %-15s\t| %-15s\t| %-6d\t| %-8d | %-8.2f |\n",
-                   current->author, current->title, current->year, current->pages, current->cost);
-            found = 1;
+    *newBtn = data; // Копіюємо дані
+    newBtn->next = NULL;
+
+    // Сортування за вартістю (зростання)
+    if (*head == NULL || (*head)->cost >= newBtn->cost) {
+        newBtn->next = *head;
+        *head = newBtn;
+    } else {
+        Book *current = *head;
+        while (current->next != NULL && current->next->cost < newBtn->cost) {
+            current = current->next;
         }
-        current = current->next;
+        newBtn->next = current->next;
+        current->next = newBtn;
     }
-    
-    if (!found) {
-        printf("| %-83s |\n", "Книг таких авторів не знайдено.");
-    }
-    printf("---------------------------------------------------------------------------------------\n");
 }
 
-void loadFromFile(const char *filename, Book **head)
-{
+void loadFromFile(const char *filename, Book **head) {
     FILE *file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        printf("Error: Неможливо відкрити файл '%s'.\n", filename);
+    if (!file) {
+        perror("Помилка відкриття файлу для читання");
         return;
     }
 
-    char author[50], title[50];
-    int year, pages;
-    float cost;
-
-    // Перевіряємо, чи зчитано рівно 5 елементів для безпеки
-    while (fscanf(file, "%49s %49s %d %d %f", author, title, &year, &pages, &cost) == 5)
-    {
-        insertNewBook(head, author, title, year, pages, cost);
+    Book temp;
+    char line[200];
+    while (fgets(line, sizeof(line), file)) {
+        // Парсинг рядка: Автор;Назва;Рік;Сторінки;Ціна
+        if (sscanf(line, "%[^;];%[^;];%d;%d;%f", 
+            temp.author, temp.title, &temp.year, &temp.pages, &temp.cost) == 5) {
+            insertSorted(head, temp);
+        }
     }
     fclose(file);
 }
 
-void insertNewBook(Book **head, char *author, char *title, int year, int pages, float cost)
-{
-    Book *newBook = (Book *)malloc(sizeof(Book));
-    strcpy(newBook->author, author);
-    strcpy(newBook->title, title);
-    newBook->year = year;
-    newBook->pages = pages;
-    newBook->cost = cost;
-    newBook->next = NULL;
-
-    // Вставка на початок, якщо список пустий або нова ціна найменша
-    if (*head == NULL || (*head)->cost >= newBook->cost)
-    {
-        newBook->next = *head;
-        *head = newBook;
+void saveToFile(const char *filename, Book *head) {
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        perror("Помилка відкриття файлу для запису");
         return;
     }
 
-    Book *current = *head;
-    // Пошук правильної позиції (сортування за зростанням вартості)
-    while (current->next != NULL && current->next->cost < newBook->cost)
-    {
-        current = current->next;
+    Book *curr = head;
+    while (curr) {
+        fprintf(file, "%s;%s;%d;%d;%.2f\n", 
+                curr->author, curr->title, curr->year, curr->pages, curr->cost);
+        curr = curr->next;
     }
-
-    newBook->next = current->next;
-    current->next = newBook;
+    fclose(file);
 }
 
-float calculateAvg(Book *head)
-{
-    if (head == NULL) return 0.0f;
-    
-    float sum = 0.0f; // Виправлено: тепер сума є float
+void findAuthorsByLetter(Book *head, char letter) {
+    printf("\n--- Автори на букву '%c' ---\n", letter);
+    int found = 0;
+    for (Book *curr = head; curr; curr = curr->next) {
+        if (toupper(curr->author[0]) == toupper(letter)) {
+            printf("%s (Книга: %s)\n", curr->author, curr->title);
+            found = 1;
+        }
+    }
+    if (!found) printf("Нікого не знайдено.\n");
+}
+
+void delCheaperThanAvg(Book **head) {
+    if (!*head) return;
+
+    float sum = 0;
     int count = 0;
-    Book *current = head;
-    
-    while (current != NULL)
-    {
-        sum += current->cost;
+    for (Book *curr = *head; curr; curr = curr->next) {
+        sum += curr->cost;
         count++;
-        current = current->next;
     }
-    return (sum / count); // Тепер ділення буде дійсним (float / int)
-}
+    float avg = sum / count;
+    printf("\nСередня ціна: %.2f. Видаляємо дешевші книги...\n", avg);
 
-void delCheaperThanAvg(Book **head, float avgCost)
-{
-    Book *current = *head;
-    Book *prev = NULL;
-
-    while (current != NULL)
-    {
-        if (current->cost < avgCost)
-        {
-            Book *DelBook = current;
-            if (prev == NULL)
-            {
-                *head = current->next;
-                current = *head;
-            }
-            else
-            {
-                prev->next = current->next;
-                current = current->next;
-            }
-            free(DelBook);
-        }
-        else
-        {
-            prev = current;
-            current = current->next;
+    Book *curr = *head, *prev = NULL;
+    while (curr) {
+        if (curr->cost < avg) {
+            Book *temp = curr;
+            if (prev == NULL) *head = curr->next;
+            else prev->next = curr->next;
+            
+            curr = curr->next;
+            free(temp);
+        } else {
+            prev = curr;
+            curr = curr->next;
         }
     }
 }
 
-void freeList(Book *head)
-{
-    Book *current = head;
-    while (current != NULL)
-    {
-        Book *temp = current;
-        current = current->next;
+void printBooks(Book *head) {
+    printf("\n%-15s | %-15s | %-5s | %-5s | %-7s\n", "Автор", "Назва", "Рік", "Стор.", "Ціна");
+    printf("------------------------------------------------------------------\n");
+    for (Book *curr = head; curr; curr = curr->next) {
+        printf("%-15s | %-15s | %-5d | %-5d | %-7.2f\n", 
+               curr->author, curr->title, curr->year, curr->pages, curr->cost);
+    }
+}
+
+void freeList(Book *head) {
+    while (head) {
+        Book *temp = head;
+        head = head->next;
         free(temp);
     }
 }
