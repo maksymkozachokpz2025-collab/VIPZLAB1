@@ -1,5 +1,5 @@
-#ifndef FUNC_H
-#define FUNC_H
+#ifndef NEWFUNC_H
+#define NEWFUNC_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,5 +22,6 @@ float calculateAvg(Book *head);
 void delCheaperThanAvg(Book **head, float averageCost);
 void freeList(Book *head);
 void insertNewBook(Book **head, char *author, char *title, int year, int pages, float cost);
+void printBooksByAuthorA(Book *head); // Нова функція
 
 #endif
