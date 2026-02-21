@@ -1,12 +1,12 @@
-#ifndef NEWFUNC_H
-#define NEWFUNC_H
+#ifndef FUNC_H
+#define FUNC_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
-typedef struct Book
-{
+typedef struct Book {
     char author[50];
     char title[50];
     int year;
@@ -15,13 +15,13 @@ typedef struct Book
     struct Book *next;
 } Book;
 
-void printHeader();
-void printBooks(Book *head);
+// Прототипи функцій
 void loadFromFile(const char *filename, Book **head);
-float calculateAvg(Book *head);
-void delCheaperThanAvg(Book **head, float averageCost);
+void saveToFile(const char *filename, Book *head);
+void printBooks(Book *head);
+void findAuthorsByLetter(Book *head, char letter);
+void delCheaperThanAvg(Book **head);
 void freeList(Book *head);
-void insertNewBook(Book **head, char *author, char *title, int year, int pages, float cost);
-void printBooksByAuthorA(Book *head); // Нова функція
+void insertSorted(Book **head, Book newBookData);
 
 #endif
